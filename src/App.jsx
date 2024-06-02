@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Preloader from "./components/Preloader";
 import MenuScene from "./components/MenuScene";
 import PlayScene from "./components/PlayScene";
@@ -85,6 +85,15 @@ function App() {
 
   const [totalLevels, setTotalLevels] = useState(Object.keys(levelMaps).length);
 
+  useEffect(() => {
+    const savedLevel = localStorage.getItem("currentLevel");
+    if (savedLevel) {
+      setLevel(parseInt(savedLevel));
+      setScene("play");
+    } else {
+      setScene("menu");
+    }
+  }, []);
   const switchScene = (newScene) => {
     setScene(newScene);
   };

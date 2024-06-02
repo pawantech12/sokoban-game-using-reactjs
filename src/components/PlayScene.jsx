@@ -9,18 +9,15 @@ import {
   FaArrowLeft,
   FaArrowRight,
   FaArrowUp,
+  FaUndo,
 } from "react-icons/fa";
 
 const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
   const [steps, setSteps] = useState(0);
   const canvasRef = useRef(null);
   const [worker, setWorker] = useState({ x: 1, y: 1 });
+  const [prevWorker, setPrevWorker] = useState(null);
 
-  // useEffect(() => {
-  //   // Calculate the total number of levels
-  //   const totalLevels = Object.keys(levelMaps).length;
-  //   setTotalLevels(totalLevels);
-  // }, [setTotalLevels, levelMaps]);
   const [levelMap, setLevelMap] = useState(levelMaps[level]);
   const tileSize = 50;
   const [images, setImages] = useState({});
@@ -89,6 +86,7 @@ const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
     const newX = worker.x + dx;
     const newY = worker.y + dy;
     if (levelMap[newY][newX] !== "#" && levelMap[newY][newX] !== "B") {
+      setPrevWorker(worker);
       setWorker({ x: newX, y: newY });
       setSteps(steps + 1);
     }
@@ -101,9 +99,18 @@ const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
         newLevelMap[newY][newX] = ".";
         newLevelMap[nextY][nextX] = "B";
         setLevelMap(newLevelMap);
+        setPrevWorker(worker);
         setWorker({ x: newX, y: newY });
         setSteps(steps + 1);
       }
+    }
+  };
+
+  const resetToPreviousStep = () => {
+    if (prevWorker) {
+      setWorker(prevWorker);
+      setPrevWorker(null);
+      setSteps(steps - 1);
     }
   };
 
@@ -132,6 +139,12 @@ const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
     }
   };
 
+  const resetLevel = () => {
+    setWorker({ x: 1, y: 1 });
+    setPrevWorker(null);
+    setSteps(0);
+  };
+
   return (
     <section className="w-full h-full flex flex-col items-center justify-center">
       <header className="flex justify-between w-full mb-4">
@@ -152,7 +165,7 @@ const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
       </header>
       <div className="relative">
         <canvas ref={canvasRef} width="300" height="300"></canvas>
-        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+        <div className="absolute top-1/2 left-0 w-full h-full flex items-center justify-center">
           <button className="btn btn-primary" onClick={() => handleMove(0, -1)}>
             <FaArrowUp />
           </button>
@@ -174,6 +187,17 @@ const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
             <FaArrowDown />
           </button>
         </div>
+      </div>
+      <div className="mt-4">
+        <button className="btn btn-danger" onClick={resetLevel}>
+          Reset Level
+        </button>
+        <button
+          className="btn btn-secondary ml-2"
+          onClick={resetToPreviousStep}
+        >
+          <FaUndo /> Undo
+        </button>
       </div>
     </section>
   );
