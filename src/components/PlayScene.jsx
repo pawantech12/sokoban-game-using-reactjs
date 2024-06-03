@@ -4,6 +4,7 @@ import ground from "../img/ground.png";
 import player from "../img/player.png";
 import point from "../img/point.png";
 import wall from "../img/wall.png";
+import outside from "../img/outside.png";
 import {
   FaArrowDown,
   FaArrowLeft,
@@ -23,16 +24,30 @@ const PlayScene = ({
 }) => {
   const [steps, setSteps] = useState(0);
   const canvasRef = useRef(null);
-  const [worker, setWorker] = useState({ x: 1, y: 1 });
+
+  const findInitialWorkerPosition = (map) => {
+    for (let y = 0; y < map.length; y++) {
+      for (let x = 0; x < map[y].length; x++) {
+        if (map[y][x] === "worker") {
+          return { x, y };
+        }
+      }
+    }
+    return { x: 1, y: 1 }; // Default position if not found
+  };
+
+  const initialPosition = findInitialWorkerPosition(levelMaps[level]);
+  const [worker, setWorker] = useState(initialPosition);
   const [prevWorker, setPrevWorker] = useState(null);
 
   const [levelMap, setLevelMap] = useState(levelMaps[level]);
-  const tileSize = 50;
+  const tileSize = 30;
   const [images, setImages] = useState({});
   const [currentLevel, setCurrentLevel] = useState(level);
 
   useEffect(() => {
     const imgSources = {
+      "/": outside,
       "#": wall,
       ".": ground,
       B: crate,
@@ -77,13 +92,24 @@ const PlayScene = ({
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Clear canvas before redraw
     levelMap.forEach((row, y) => {
       row.forEach((tile, x) => {
-        ctx.drawImage(
-          images[tile],
-          x * tileSize,
-          y * tileSize,
-          tileSize,
-          tileSize
-        );
+        if (images[tile] !== images["worker"]) {
+          ctx.drawImage(
+            images[tile],
+            x * tileSize,
+            y * tileSize,
+            tileSize,
+            tileSize
+          );
+        } else {
+          // Draw ground image if the tile is the worker's initial position
+          ctx.drawImage(
+            images["."],
+            x * tileSize,
+            y * tileSize,
+            tileSize,
+            tileSize
+          );
+        }
         if (x === worker.x && y === worker.y) {
           ctx.drawImage(
             images["worker"],
@@ -100,10 +126,14 @@ const PlayScene = ({
   const handleMove = (dx, dy) => {
     const newX = worker.x + dx;
     const newY = worker.y + dy;
+
     if (levelMap[newY][newX] !== "#" && levelMap[newY][newX] !== "B") {
+      const newLevelMap = [...levelMap];
+      newLevelMap[worker.y][worker.x] = "."; // Change the previous worker position to "."
       setPrevWorker(worker);
       setWorker({ x: newX, y: newY });
       setSteps(steps + 1);
+      setLevelMap(newLevelMap);
     }
     // Logic to handle pushing the box
     else if (levelMap[newY][newX] === "B") {
@@ -111,6 +141,7 @@ const PlayScene = ({
       const nextY = newY + dy;
       if (levelMap[nextY][nextX] === "." || levelMap[nextY][nextX] === "G") {
         const newLevelMap = [...levelMap];
+        newLevelMap[worker.y][worker.x] = "."; // Change the previous worker position to "."
         newLevelMap[newY][newX] = ".";
         newLevelMap[nextY][nextX] = "B";
         setLevelMap(newLevelMap);
@@ -126,6 +157,7 @@ const PlayScene = ({
       setWorker(prevWorker);
       setPrevWorker(null);
       setSteps(steps - 1);
+      drawLevel(canvasRef.current.getContext("2d")); // Redraw the level to update the tiles
     }
   };
 
@@ -146,7 +178,7 @@ const PlayScene = ({
         if (currentLevel + 1 in levelMaps) {
           setCurrentLevel(currentLevel + 1);
           setLevelMap(levelMaps[currentLevel + 1]);
-          setWorker({ x: 1, y: 1 });
+          setWorker(findInitialWorkerPosition(levelMaps[currentLevel + 1]));
           setSteps(0);
         } else {
           switchScene("menu");
@@ -156,10 +188,12 @@ const PlayScene = ({
   };
 
   const resetLevel = () => {
-    setWorker({ x: 1, y: 1 });
+    setWorker(findInitialWorkerPosition(levelMap));
     setPrevWorker(null);
     setSteps(0);
+    drawLevel(canvasRef.current.getContext("2d")); // Redraw the level to update the tiles
   };
+
   const handleKeyDown = (event) => {
     switch (event.key) {
       case "ArrowUp":
@@ -178,6 +212,7 @@ const PlayScene = ({
         break;
     }
   };
+
   return (
     <section className="w-full h-full flex flex-col items-center justify-center">
       <div className="relative w-1/3 flex flex-col items-center">
@@ -211,31 +246,31 @@ const PlayScene = ({
             </div>
           </div>
         </header>
-        <div className="mt-3 relative flex flex-col items-center">
-          <canvas ref={canvasRef} width="300" height="300"></canvas>
-          <div className="absolute top-[110%] left-0 w-full h-40 flex flex-col items-center justify-center">
+        <div className="my-3 relative flex flex-col items-center">
+          <canvas ref={canvasRef} width="450" height="450"></canvas>
+          <div className="absolute top-[105%] left-0 w-full h-40 flex flex-col items-center justify-center">
             <button
-              className="absolute top-0 left-1/2 w-full flex justify-center transform -translate-x-1/2 rounded-xl bg-gray-300 p-4"
+              className="absolute top-0 left-1/2 w-full border-2 border-slate-200 flex justify-center transform -translate-x-1/2 rounded-xl hover:bg-gray-100 p-4"
               onClick={() => handleMove(0, -1)}
             >
               <FaArrowUp />
             </button>
 
             <button
-              className="absolute left-0 top-1/2 w-[48%] flex justify-center transform -translate-y-1/2 rounded-xl bg-gray-300 p-4"
+              className="absolute left-0 top-1/2 w-[48%] flex justify-center transform -translate-y-1/2 rounded-xl border-2 border-slate-200 hover:bg-gray-100 p-4"
               onClick={() => handleMove(-1, 0)}
             >
               <FaArrowLeft />
             </button>
             <button
-              className="absolute right-0 top-1/2 w-[48%] flex justify-center transform -translate-y-1/2 rounded-xl bg-gray-300 p-4"
+              className="absolute right-0 top-1/2 w-[48%] flex justify-center transform -translate-y-1/2 rounded-xl border-2 border-slate-200 hover:bg-gray-100 p-4"
               onClick={() => handleMove(1, 0)}
             >
               <FaArrowRight />
             </button>
 
             <button
-              className="absolute bottom-0 left-1/2 w-full flex justify-center transform -translate-x-1/2 rounded-xl bg-gray-300 p-4"
+              className="absolute bottom-0 left-1/2 w-full flex justify-center transform -translate-x-1/2 rounded-xl border-2 border-slate-200 hover:bg-gray-100 p-4"
               onClick={() => handleMove(0, 1)}
             >
               <FaArrowDown />
