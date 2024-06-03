@@ -1,6 +1,11 @@
 import React from "react";
 
-const LevelScene = ({ switchScene, handleLevelSelect, totalLevels }) => {
+const LevelScene = ({
+  switchScene,
+  handleLevelSelect,
+  totalLevels,
+  completedLevels,
+}) => {
   const levels = Array.from({ length: totalLevels }, (_, i) => i + 1);
   console.log("levels", levels);
   return (
@@ -18,7 +23,9 @@ const LevelScene = ({ switchScene, handleLevelSelect, totalLevels }) => {
         {levels.map((level) => (
           <button
             key={level}
-            className="btn btn-info m-2"
+            className={`btn m-2 ${
+              completedLevels.includes(level) ? "bg-green-500" : "bg-yellow-500"
+            }`}
             onClick={() => handleLevelSelect(level)}
           >
             {level}

@@ -8,6 +8,8 @@ import AboutScene from "./components/AboutScene";
 function App() {
   const [scene, setScene] = useState("preloader");
   const [level, setLevel] = useState(1);
+  const [completedLevels, setCompletedLevels] = useState([]);
+
   const levelMaps = {
     1: [
       ["#", "#", "#", "#", "#", "#"],
@@ -87,20 +89,40 @@ function App() {
 
   useEffect(() => {
     const savedLevel = localStorage.getItem("currentLevel");
+    const savedCompletedLevels = localStorage.getItem("completedLevels");
+
     if (savedLevel) {
       setLevel(parseInt(savedLevel));
       setScene("play");
     } else {
       setScene("menu");
     }
+
+    if (savedCompletedLevels) {
+      setCompletedLevels(JSON.parse(savedCompletedLevels));
+    }
   }, []);
+
   const switchScene = (newScene) => {
     setScene(newScene);
   };
 
   const handleLevelSelect = (selectedLevel) => {
-    setLevel(selectedLevel);
-    setScene("play");
+    if (completedLevels.includes(selectedLevel - 1) || selectedLevel === 1) {
+      setLevel(selectedLevel);
+      setScene("play");
+    }
+  };
+
+  const handleLevelComplete = (completedLevel) => {
+    if (!completedLevels.includes(completedLevel)) {
+      const newCompletedLevels = [...completedLevels, completedLevel];
+      setCompletedLevels(newCompletedLevels);
+      localStorage.setItem(
+        "completedLevels",
+        JSON.stringify(newCompletedLevels)
+      );
+    }
   };
 
   return (
@@ -113,6 +135,7 @@ function App() {
           level={level}
           setTotalLevels={setTotalLevels}
           levelMaps={levelMaps}
+          onLevelComplete={handleLevelComplete}
         />
       )}
       {scene === "level" && (
@@ -120,6 +143,7 @@ function App() {
           switchScene={switchScene}
           handleLevelSelect={handleLevelSelect}
           totalLevels={totalLevels}
+          completedLevels={completedLevels}
         />
       )}
       {scene === "about" && <AboutScene switchScene={switchScene} />}

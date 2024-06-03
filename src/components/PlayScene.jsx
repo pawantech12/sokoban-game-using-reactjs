@@ -11,8 +11,16 @@ import {
   FaArrowUp,
   FaUndo,
 } from "react-icons/fa";
+import { FaArrowLeftLong } from "react-icons/fa6";
+import { RiLoopRightLine } from "react-icons/ri";
 
-const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
+const PlayScene = ({
+  switchScene,
+  level,
+  setTotalLevels,
+  levelMaps,
+  onLevelComplete,
+}) => {
   const [steps, setSteps] = useState(0);
   const canvasRef = useRef(null);
   const [worker, setWorker] = useState({ x: 1, y: 1 });
@@ -51,6 +59,13 @@ const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     drawLevel(ctx);
+    // Add event listeners for arrow keys
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      // Remove event listeners on cleanup
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [worker, levelMap, images]);
 
   useEffect(() => {
@@ -127,6 +142,7 @@ const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
     }
     if (isWin) {
       setTimeout(() => {
+        onLevelComplete(currentLevel);
         if (currentLevel + 1 in levelMaps) {
           setCurrentLevel(currentLevel + 1);
           setLevelMap(levelMaps[currentLevel + 1]);
@@ -144,60 +160,88 @@ const PlayScene = ({ switchScene, level, setTotalLevels, levelMaps }) => {
     setPrevWorker(null);
     setSteps(0);
   };
-
+  const handleKeyDown = (event) => {
+    switch (event.key) {
+      case "ArrowUp":
+        handleMove(0, -1);
+        break;
+      case "ArrowDown":
+        handleMove(0, 1);
+        break;
+      case "ArrowLeft":
+        handleMove(-1, 0);
+        break;
+      case "ArrowRight":
+        handleMove(1, 0);
+        break;
+      default:
+        break;
+    }
+  };
   return (
     <section className="w-full h-full flex flex-col items-center justify-center">
-      <header className="flex justify-between w-full mb-4">
-        <button
-          className="btn btn-secondary"
-          onClick={() => switchScene("menu")}
-        >
-          <i className="fas fa-arrow-left"></i> Back
-        </button>
-        <div className="flex items-center space-x-4">
-          <div className="text-gray-800">
-            <b>Level:</b> {currentLevel}
-          </div>
-          <div className="text-gray-800">
-            <b>Steps:</b> {steps}
-          </div>
-        </div>
-      </header>
-      <div className="relative">
-        <canvas ref={canvasRef} width="300" height="300"></canvas>
-        <div className="absolute top-1/2 left-0 w-full h-full flex items-center justify-center">
-          <button className="btn btn-primary" onClick={() => handleMove(0, -1)}>
-            <FaArrowUp />
-          </button>
-          <div className="flex justify-center">
+      <div className="relative w-1/3 flex flex-col items-center">
+        <header className="flex w-full items-center justify-between">
+          <div className="flex gap-2">
             <button
-              className="btn btn-primary mr-2"
+              className="border-2 px-3 py-2 rounded-md border-slate-200"
+              onClick={() => switchScene("menu")}
+            >
+              <FaArrowLeftLong />
+            </button>
+            <button
+              className="border-2 px-3 py-2 rounded-md border-slate-200"
+              onClick={resetLevel}
+            >
+              <RiLoopRightLine />
+            </button>
+            <button
+              className="border-2 px-3 py-2 rounded-md border-slate-200"
+              onClick={resetToPreviousStep}
+            >
+              <FaUndo />
+            </button>
+          </div>
+          <div className="flex items-center font-medium space-x-4">
+            <div className="text-gray-600 border-2 px-3 py-1 rounded-md border-slate-200  flex flex-col items-center">
+              <span>Level:</span> {currentLevel}
+            </div>
+            <div className="text-gray-600 border-2 px-3 py-1 rounded-md border-slate-200 flex flex-col items-center">
+              <span>Steps:</span> {steps}
+            </div>
+          </div>
+        </header>
+        <div className="mt-3 relative flex flex-col items-center">
+          <canvas ref={canvasRef} width="300" height="300"></canvas>
+          <div className="absolute top-[110%] left-0 w-full h-40 flex flex-col items-center justify-center">
+            <button
+              className="absolute top-0 left-1/2 w-full flex justify-center transform -translate-x-1/2 rounded-xl bg-gray-300 p-4"
+              onClick={() => handleMove(0, -1)}
+            >
+              <FaArrowUp />
+            </button>
+
+            <button
+              className="absolute left-0 top-1/2 w-[48%] flex justify-center transform -translate-y-1/2 rounded-xl bg-gray-300 p-4"
               onClick={() => handleMove(-1, 0)}
             >
               <FaArrowLeft />
             </button>
             <button
-              className="btn btn-primary"
+              className="absolute right-0 top-1/2 w-[48%] flex justify-center transform -translate-y-1/2 rounded-xl bg-gray-300 p-4"
               onClick={() => handleMove(1, 0)}
             >
               <FaArrowRight />
             </button>
+
+            <button
+              className="absolute bottom-0 left-1/2 w-full flex justify-center transform -translate-x-1/2 rounded-xl bg-gray-300 p-4"
+              onClick={() => handleMove(0, 1)}
+            >
+              <FaArrowDown />
+            </button>
           </div>
-          <button className="btn btn-primary" onClick={() => handleMove(0, 1)}>
-            <FaArrowDown />
-          </button>
         </div>
-      </div>
-      <div className="mt-4">
-        <button className="btn btn-danger" onClick={resetLevel}>
-          Reset Level
-        </button>
-        <button
-          className="btn btn-secondary ml-2"
-          onClick={resetToPreviousStep}
-        >
-          <FaUndo /> Undo
-        </button>
       </div>
     </section>
   );
